@@ -15,4 +15,5 @@ fun Application.module() {
     configureSockets()
     configureSerialization()
     configureRouting()
+    configureSessions()
 }

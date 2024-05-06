@@ -1,5 +1,6 @@
 package doodlekong.robert
 
+import com.google.gson.Gson
 import doodlekong.robert.plugins.*
 import io.ktor.server.application.*
 import io.ktor.server.engine.*
@@ -11,6 +12,7 @@ fun main() {
 }
 
 val server = DrawingServer()
+val gson = Gson()
 
 fun Application.module() {
     configureMonitoring()

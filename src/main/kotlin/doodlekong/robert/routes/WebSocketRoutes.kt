@@ -11,6 +11,7 @@ import doodlekong.robert.utility.Constants.TYPE_ANNOUNCEMENT
 import doodlekong.robert.utility.Constants.TYPE_CHAT_MESSAGE
 import doodlekong.robert.utility.Constants.TYPE_CHOSEN_WORD
 import doodlekong.robert.utility.Constants.TYPE_DRAW_DATA
+import doodlekong.robert.utility.Constants.TYPE_GAME_STATE
 import doodlekong.robert.utility.Constants.TYPE_JOIN_ROOM_HANDSHAKE
 import doodlekong.robert.utility.Constants.TYPE_PHASE_CHANGE
 import io.ktor.server.routing.*
@@ -88,6 +89,7 @@ fun Route.standardWebSocket(
                         TYPE_JOIN_ROOM_HANDSHAKE -> JoinRoomHandshake::class.java
                         TYPE_PHASE_CHANGE -> PhaseChange::class.java
                         TYPE_CHOSEN_WORD -> ChosenWord::class.java
+                        TYPE_GAME_STATE -> GameState::class.java
                         else -> BaseModel::class.java
                     }
                     val payload = gson.fromJson(message, type)

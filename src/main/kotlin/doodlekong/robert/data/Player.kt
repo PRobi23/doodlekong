@@ -6,7 +6,7 @@ data class Player(
     val userName: String,
     var socket: WebSocketSession, //TODO THIS can be val and use copy
     val clientId: String,
-    val drawing: Boolean = false,
+    var isDrawing: Boolean = false,
     var score: Int = 0,
     val rank: Int = 0
 )

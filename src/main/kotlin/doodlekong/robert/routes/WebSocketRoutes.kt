@@ -10,10 +10,13 @@ import doodlekong.robert.session.DrawingSession
 import doodlekong.robert.utility.Constants.TYPE_ANNOUNCEMENT
 import doodlekong.robert.utility.Constants.TYPE_CHAT_MESSAGE
 import doodlekong.robert.utility.Constants.TYPE_CHOSEN_WORD
+import doodlekong.robert.utility.Constants.TYPE_DISCONNECT_REQUEST
+import doodlekong.robert.utility.Constants.TYPE_DRAW_ACTION
 import doodlekong.robert.utility.Constants.TYPE_DRAW_DATA
 import doodlekong.robert.utility.Constants.TYPE_GAME_STATE
 import doodlekong.robert.utility.Constants.TYPE_JOIN_ROOM_HANDSHAKE
 import doodlekong.robert.utility.Constants.TYPE_PHASE_CHANGE
+import doodlekong.robert.utility.Constants.TYPE_PING
 import io.ktor.server.routing.*
 import io.ktor.server.sessions.*
 import io.ktor.server.websocket.*
@@ -40,6 +43,10 @@ fun Route.gameWebSocketRoute() {
                     server.playerJoined(player)
                     if (!room.containsPlayer(player.userName)) {
                         room.addPlayer(player.clientId, player.clientId, socket)
+                    } else {
+                        val playerInRoom = room.players.find { it.clientId == clientId }
+                        playerInRoom?.socket = socket
+                        playerInRoom?.startPinging()
                     }
                 }
 
@@ -47,7 +54,15 @@ fun Route.gameWebSocketRoute() {
                     val room = server.rooms[payload.roomName] ?: return@standardWebSocket
                     if (room.phase == Room.Phase.GAME_RUNNING) {
                         room.broadcastAllExcept(message, clientId)
+                        room.addSerializedDrawInfo(message)
                     }
+                    room.lastDrawData = payload
+                }
+
+                is DrawAction -> {
+                    val room = server.getRoomWithClientId(clientId) ?: return@standardWebSocket
+                    room.broadcastAllExcept(message, clientId)
+                    room.addSerializedDrawInfo(message)
                 }
 
                 is ChatMessage -> {
@@ -60,6 +75,14 @@ fun Route.gameWebSocketRoute() {
                 is ChosenWord -> {
                     val room = server.rooms[payload.roomName] ?: return@standardWebSocket
                     room.setWordAndSwitchToGameRunning(payload.chosenWord)
+                }
+
+                is Ping -> {
+                    server.players[clientId]?.receivedPong()
+                }
+
+                is Disconnect -> {
+                    server.playerLeft(clientId, true)
                 }
             }
         }
@@ -93,6 +116,9 @@ fun Route.standardWebSocket(
                         TYPE_PHASE_CHANGE -> PhaseChange::class.java
                         TYPE_CHOSEN_WORD -> ChosenWord::class.java
                         TYPE_GAME_STATE -> GameState::class.java
+                        TYPE_PING -> Ping::class.java
+                        TYPE_DISCONNECT_REQUEST -> Disconnect::class.java
+                        TYPE_DRAW_ACTION -> DrawAction::class.java
                         else -> BaseModel::class.java
                     }
                     val payload = gson.fromJson(message, type)

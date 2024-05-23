@@ -30,6 +30,9 @@ data class Room(
 
     private var phaseChangedListener: ((Phase) -> Unit)? = null
 
+    private var currentRoundDrawData: List<String> = emptyList()
+    var lastDrawData: DrawData? = null
+
     var phase = Phase.WAITING_FOR_PLAYERS
         set(value) {
             synchronized(field) {
@@ -101,9 +104,32 @@ data class Room(
 
         sendWordToPlayer(player)
         broadcastPlayerStates()
+        sendCurRoundDrawInfoToPlayer(player)
         broadcast(gson.toJson(announcement))
 
         return player
+    }
+
+    private suspend fun sendCurRoundDrawInfoToPlayer(player: Player) {
+        if (phase == Phase.GAME_RUNNING || phase == Phase.SHOW_WORD) {
+            player.socket.send(Frame.Text(gson.toJson(RoundDrawInfo(currentRoundDrawData))))
+        }
+    }
+
+    private suspend fun finishOffDrawing() {
+        lastDrawData?.let {
+            //2 -> ACTION_MOVE
+            if (currentRoundDrawData.isNotEmpty() && it.motionEvent == 2) {
+                val finishDrawData = it.copy(
+                    motionEvent = 1 //ACTION_UP
+                )
+                broadcast(gson.toJson(finishDrawData))
+            }
+        }
+    }
+
+    fun addSerializedDrawInfo(drawAction: String) {
+        currentRoundDrawData = currentRoundDrawData + drawAction
     }
 
     @OptIn(DelicateCoroutinesApi::class)
@@ -162,9 +188,17 @@ data class Room(
             }
             phase = when (phase) {
                 Phase.WAITING_FOR_START -> Phase.NEW_ROUND
-                Phase.GAME_RUNNING -> Phase.SHOW_WORD
+                Phase.GAME_RUNNING -> {
+                    finishOffDrawing()
+                    Phase.SHOW_WORD
+                }
+
                 Phase.SHOW_WORD -> Phase.NEW_ROUND
-                Phase.NEW_ROUND -> Phase.GAME_RUNNING
+                Phase.NEW_ROUND -> {
+                    word = null
+                    Phase.GAME_RUNNING
+                }
+
                 else -> Phase.WAITING_FOR_PLAYERS
             }
         }
@@ -224,6 +258,7 @@ data class Room(
 
     @OptIn(DelicateCoroutinesApi::class)
     private fun newRound() {
+        currentRoundDrawData = emptyList()
         currentWords = getRandomWords(3)
         val newWords = NewWords(currentWords!!)
         nextDrawingPlayer()

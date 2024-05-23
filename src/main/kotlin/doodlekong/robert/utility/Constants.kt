@@ -3,6 +3,7 @@ package doodlekong.robert.utility
 object Constants {
 
     const val MAX_ROOM_SIZE = 8
+    const val PING_FREQUENCY = 3000L
 
     const val TYPE_CHAT_MESSAGE = "TYPE_CHAT_MESSAGE"
     const val TYPE_DRAW_DATA = "TYPE_DRAW_DATA"
@@ -14,4 +15,9 @@ object Constants {
     const val TYPE_GAME_STATE = "TYPE_GAME_STATE"
     const val TYPE_NEW_WORDS = "TYPE_NEW_WORDS"
     const val TYPE_PLAYERS_LIST = "TYPE_PLAYERS_LIST"
+    const val TYPE_PING = "TYPE_PING"
+    const val TYPE_DISCONNECT_REQUEST = "TYPE_DISCONNECT_REQUEST"
+    const val TYPE_DRAW_ACTION = "TYPE_DRAW_ACTION"
+    const val TYPE_CURRENT_ROUND_DRAW_INFO = "TYPE_CURRENT_ROUND_DRAW_INFO"
+
 }

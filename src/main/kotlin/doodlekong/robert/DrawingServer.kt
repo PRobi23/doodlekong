@@ -11,6 +11,7 @@ class DrawingServer {
 
     fun playerJoined(player: Player) {
         players[player.clientId] = player
+        player.startPinging()
     }
 
     fun getRoomWithClientId(clientId: String): Room? {
@@ -28,9 +29,10 @@ class DrawingServer {
 
     fun playerLeft(clientId: String, immediatelyDisconnect: Boolean = false) {
         val playersRoom = getRoomWithClientId(clientId)
-        if (immediatelyDisconnect) {
+        if (immediatelyDisconnect || players[clientId]?.isOnline == false) {
             println("Closing connection for players ${players[clientId]?.userName}")
             playersRoom?.removePlayer(clientId)
+            players[clientId]?.disconnect()
             players.remove(clientId)
         }
     }
